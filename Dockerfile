@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:0.11.8 AS uv-bin
+FROM ghcr.io/astral-sh/uv:0.13.5 AS uv-bin
 
 FROM python:3.12.11-slim AS app
 
