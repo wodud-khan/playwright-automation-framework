@@ -49,3 +49,32 @@ coverage.xml
 
 # Node
 node_modules/
+
+# Credentials, browser sessions, and local agent state
+.aws/
+.ssh/
+.codex/
+.agents/
+.auth/
+playwright/.auth/
+*storage-state*.json
+*storageState*.json
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+secrets.yaml
+secrets.yml
+CODEX_*.md
+FRESH_MAC_SETUP_GUIDE.md
+
+# Generated distributions and reports outside artifacts/
+build/
+dist/
+reports/
+*.har
+*.trace
+trace.zip
+*.webm

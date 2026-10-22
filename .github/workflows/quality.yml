@@ -15,10 +15,51 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  UV_VERSION: "0.11.8"
-  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.13.5"
+  PYTHON_VERSION: "3.12.15"
 
 jobs:
+  security:
+    name: Secret and dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Scan Git history for secrets
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+          GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            --output "$RUNNER_TEMP/gitleaks.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" git . --log-opts="--all --full-history" --redact=100
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install locked audit tools
+        run: uv sync --locked --group security
+
+      - name: Scan Python source
+        run: uv run --frozen bandit -r src scripts conftest.py
+
+      - name: Audit locked runtime, development, and audit dependencies
+        run: |
+          uv export --locked --extra dev --group security --no-emit-project \
+            --format requirements-txt --output-file "$RUNNER_TEMP/requirements-audit.txt" > /dev/null
+          uv run --frozen pip-audit -r "$RUNNER_TEMP/requirements-audit.txt" --no-deps --disable-pip
+
   static-and-unit:
     name: Static analysis and unit tests
     runs-on: ubuntu-latest
@@ -68,13 +109,15 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: unit-reports
-          path: artifacts/
+          path: |
+            artifacts/unit-report.html
+            artifacts/unit-junit.xml
           if-no-files-found: warn
           retention-days: 14
 
   postgres-and-browser:
     name: PostgreSQL and browser tests
-    needs: static-and-unit
+    needs: [security, static-and-unit]
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -112,6 +155,21 @@ jobs:
 
       - name: Build and start the controlled stack
         run: docker compose up --detach --build --wait
+
+      - name: Audit container images
+        env:
+          TRIVY_VERSION: "0.76.1"
+          TRIVY_SHA256: "c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0"
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+            --output "$RUNNER_TEMP/trivy.tar.gz"
+          echo "${TRIVY_SHA256}  $RUNNER_TEMP/trivy.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/trivy.tar.gz" -C "$RUNNER_TEMP" trivy
+          for service in app database; do
+            "$RUNNER_TEMP/trivy" image --scanners vuln --severity HIGH,CRITICAL \
+              --exit-code 1 "$(docker compose images -q "$service")"
+          done
 
       - name: Confirm application readiness
         run: uv run --frozen python scripts/wait_for_services.py --timeout 30
@@ -184,6 +242,12 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: service-browser-evidence
-          path: artifacts/
+          path: |
+            artifacts/*-report.html
+            artifacts/*-junit.xml
+            artifacts/compose-ps.txt
+            artifacts/compose.log
+            artifacts/playwright/
+            artifacts/ci-*/
           if-no-files-found: warn
           retention-days: 14

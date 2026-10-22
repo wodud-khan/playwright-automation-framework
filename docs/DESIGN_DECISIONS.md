@@ -10,10 +10,11 @@ See [architecture](ARCHITECTURE.md) for components and [flaky-test policy](FLAKY
 
 ## October 2026 review
 
-Retain **SDET Playwright Framework** and the repository URL. The work demonstrates software
-engineering across UI, HTTP, contracts, SQL, isolation, and CI; “SDET” accurately reflects
-that scope. A subtitle and clear entry points communicate the Python stack more effectively
-than a repository rename that would disrupt resume links.
+The project is now **Playwright Automation Framework**, with the GitHub repository named
+`playwright-automation-framework`. This describes the tool and purpose directly while
+the README explains the broader API, contract, and database coverage. Python package
+imports remain `demo_app` and `test_framework`; they do not depend on the distribution
+name or checkout directory. GitHub redirects the previous repository URL.
 
 The tracked application, fixtures, clients, tests, packaging, container setup, workflow,
 and documentation were reviewed. Existing page objects, native pytest-playwright fixtures,
@@ -40,7 +41,7 @@ has all the capabilities of the referenced projects.
 | [Playwright locators](https://playwright.dev/python/docs/locators) | Keep role/label locators, with test IDs for displayed order values. |
 | [Pydantic edge-case tests](https://github.com/pydantic/pydantic/blob/main/tests/test_edge_cases.py) | Use direct, parameterized boundary cases; avoid a custom test-case DSL. |
 | [uv's GitHub Actions guide](https://docs.astral.sh/uv/guides/integration/github/) | Retain locked sync and the official setup action. |
-| [Dependabot ecosystem support](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories) | Propose updates to uv, Actions, Docker, and Compose through reviewable PRs. |
+| [Dependabot ecosystem support](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories) | Propose updates to uv, Actions, and Docker through reviewable PRs. |
 | [Playwright coding agents](https://playwright.dev/python/docs/getting-started-cli), [MCP](https://github.com/microsoft/playwright-mcp), and [test agents](https://playwright.dev/docs/test-agents) | Keep AI exploration optional; retain deterministic Python tests as the committed regression suite. |
 
 The locked toolchain passes validation; there is no benefit in upgrading every package
@@ -48,3 +49,21 @@ solely to make version numbers look recent. Review dependency updates individual
 the complete workflow. The Python 3.12 constraint remains until another interpreter line
 is actually exercised. Performance testing, authentication, and broad accessibility auditing
 need explicit product requirements and representative scenarios before expanding scope.
+
+## Final security review
+
+Python 3.12.15, pytest 9.1.1, certifi 2026.10.19, and urllib3 2.8.0 replace affected
+versions identified during the final audit. The optional `security` dependency group
+keeps Bandit and pip-audit out of the normal test installation. CI also scans complete Git
+history and both container images using checksum-pinned scanner binaries.
+
+Container scans justified replacing the older Debian bases with minimal Alpine 3.24
+images. PostgreSQL stays on major version 17, upgraded to maintenance release 17.11.
+The database target updates OS packages and removes gosu because it starts directly as
+`postgres`; the application image removes unused pip. A separate named volume avoids
+silently reusing data across libc/locale changes. The full clean-install suite validates
+the new runtime, and previous local volumes remain untouched.
+
+No extra AI runtime or alternative test runner was added. The existing optional
+exploration workflow remains appropriate; model-generated changes still require the
+same deterministic regression and security gates.

@@ -6,12 +6,16 @@ import argparse
 import os
 import time
 from math import isfinite
-from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
+from urllib.parse import urlsplit
+
+import requests
 
 
 def wait_for_url(url: str, timeout_seconds: float, interval_seconds: float = 0.25) -> None:
     """Poll an HTTP endpoint until it succeeds or the bounded timeout expires."""
+    parsed = urlsplit(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise ValueError("Readiness URL must be an absolute HTTP(S) URL")
     if not isfinite(timeout_seconds) or timeout_seconds <= 0:
         raise ValueError("Timeout must be finite and greater than zero")
     if not isfinite(interval_seconds) or interval_seconds <= 0:
@@ -23,12 +27,13 @@ def wait_for_url(url: str, timeout_seconds: float, interval_seconds: float = 0.2
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             break
+        request_timeout = min(2, remaining)
         try:
-            with urlopen(url, timeout=min(2, remaining)) as response:
-                if 200 <= response.status < 300:
+            with requests.get(url, timeout=request_timeout, stream=True) as response:
+                if 200 <= response.status_code < 300:
                     return
-                last_error = f"HTTP {response.status}"
-        except (HTTPError, URLError, TimeoutError) as error:
+                last_error = f"HTTP {response.status_code}"
+        except requests.RequestException as error:
             last_error = str(error)
         remaining = deadline - time.monotonic()
         if remaining > 0:

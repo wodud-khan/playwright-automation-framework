@@ -19,7 +19,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
-  - package-ecosystem: docker-compose
-    directory: /
-    schedule:
-      interval: monthly
+    ignore:
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]

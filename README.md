@@ -1,6 +1,6 @@
-# SDET Playwright Framework
+# Playwright Automation Framework
 
-[![Quality validation](https://github.com/wodud-khan/sdet-playwright-framework/actions/workflows/quality.yml/badge.svg)](https://github.com/wodud-khan/sdet-playwright-framework/actions/workflows/quality.yml)
+[![Quality validation](https://github.com/wodud-khan/playwright-automation-framework/actions/workflows/quality.yml/badge.svg)](https://github.com/wodud-khan/playwright-automation-framework/actions/workflows/quality.yml)
 
 A Python test automation portfolio covering an order workflow from browser to API to
 PostgreSQL. A small FastAPI application is included so every layer runs against a
@@ -32,13 +32,13 @@ WebKit. Focused keyboard and layout checks are not a complete accessibility audi
 
 ## Run locally
 
-Install [uv](https://docs.astral.sh/uv/) first. The unit suite needs neither Docker nor
+Install [uv](https://docs.astral.sh/uv/) 0.13.5 or newer first. The unit suite needs neither Docker nor
 browser binaries:
 
 ```bash
-git clone https://github.com/wodud-khan/sdet-playwright-framework.git
-cd sdet-playwright-framework
-uv sync --extra dev --locked --python 3.12
+git clone https://github.com/wodud-khan/playwright-automation-framework.git
+cd playwright-automation-framework
+uv sync --extra dev --locked --python 3.12.15
 uv run --frozen pytest tests/unit -q
 ```
 
@@ -66,7 +66,12 @@ uv run --frozen pytest tests/ui -q -n 2 --browser chromium
 uv run --frozen pytest -m smoke -q --browser chromium --browser firefox --browser webkit
 ```
 
+The included password is public, synthetic demo configuration. Both published ports bind
+to `127.0.0.1`; this unauthenticated demo is for local testing only.
+
 Stop the stack with `docker compose down`; the named database volume is retained.
+The renamed Compose project uses a new `portfolio_database_alpine` volume. Volumes from
+older checkouts are preserved; PostgreSQL data is not migrated across libc/locale changes.
 If ports 8000 or 5432 are occupied, set Compose's `APP_PORT`/`POSTGRES_PORT` and the
 matching `APP_BASE_URL`/`DATABASE_URL`. The readiness script follows `APP_BASE_URL`.
 See [troubleshooting](docs/TROUBLESHOOTING.md) for examples and the optional SQLite UI
@@ -113,6 +118,7 @@ artifacts; use `--tracing on` for that reproduction. See the
 - [Design decisions and modernization review](docs/DESIGN_DECISIONS.md)
 - [Optional AI-assisted testing](docs/AI_ASSISTED_TESTING.md)
 - [CI guide](docs/CI_CD_GUIDE.md) and [flaky-test policy](docs/FLAKY_TEST_POLICY.md)
+- [Security checks and privacy](SECURITY.md)
 - [Current validation](docs/VALIDATION.md) and [historical evidence](docs/FINAL_VALIDATION_REPORT.md)
 
 This is a focused, team-adaptable framework, not a production application. Authentication,

@@ -1,6 +1,12 @@
-FROM ghcr.io/astral-sh/uv:0.11.8 AS uv-bin
+FROM postgres:17.11-alpine3.24 AS database
 
-FROM python:3.12.11-slim AS app
+# Start PostgreSQL directly as its service user; no root-switching helper is needed.
+RUN apk upgrade --no-cache && rm /usr/local/bin/gosu
+USER postgres
+
+FROM ghcr.io/astral-sh/uv:0.13.5 AS uv-bin
+
+FROM python:3.12.15-alpine3.24 AS app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -13,8 +19,11 @@ WORKDIR /app
 
 COPY --from=uv-bin /uv /uvx /bin/
 
-RUN groupadd --gid 10001 portfolio \
-    && useradd --uid 10001 --gid portfolio --create-home portfolio \
+# uv installs the application; the base image's pip is not needed at runtime.
+RUN /usr/local/bin/python -m pip uninstall --yes pip
+
+RUN addgroup -g 10001 portfolio \
+    && adduser -D -u 10001 -G portfolio portfolio \
     && mkdir -p /app/artifacts \
     && chown -R portfolio:portfolio /app
 

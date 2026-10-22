@@ -35,7 +35,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
         yield
 
     app = FastAPI(
-        title="SDET Portfolio Demo API",
+        title="Playwright Automation Demo API",
         version="1.0.0",
         lifespan=lifespan,
     )

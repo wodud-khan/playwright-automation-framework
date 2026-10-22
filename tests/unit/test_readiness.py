@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from unittest.mock import Mock
-from urllib.error import URLError
 
 import pytest
+import requests
 
 from scripts import wait_for_services
 
@@ -15,14 +15,21 @@ def test_readiness_uses_remaining_budget(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(wait_for_services.time, "monotonic", Mock(side_effect=[0, 0.8, 1.1, 1.1]))
     sleep = Mock()
     monkeypatch.setattr(wait_for_services.time, "sleep", sleep)
-    request = Mock(side_effect=URLError("offline"))
-    monkeypatch.setattr(wait_for_services, "urlopen", request)
+    request = Mock(side_effect=requests.ConnectionError("offline"))
+    monkeypatch.setattr(wait_for_services.requests, "get", request)
 
     with pytest.raises(TimeoutError, match="offline"):
         wait_for_services.wait_for_url("http://localhost/health", 1)
 
     assert request.call_args.kwargs["timeout"] == pytest.approx(0.2)
     sleep.assert_not_called()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("url", ["file:///etc/passwd", "ftp://localhost", "http:///health"])
+def test_readiness_rejects_non_http_urls(url: str) -> None:
+    with pytest.raises(ValueError, match="absolute HTTP"):
+        wait_for_services.wait_for_url(url, 1)
 
 
 @pytest.mark.unit

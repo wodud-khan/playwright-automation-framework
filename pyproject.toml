@@ -3,7 +3,7 @@ requires = ["setuptools>=75,<82"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sdet-playwright-framework"
+name = "playwright-automation-framework"
 version = "0.2.0"
 description = "Python quality engineering framework for UI, API, contract, and PostgreSQL testing."
 readme = "README.md"
@@ -21,7 +21,7 @@ dependencies = [
 dev = [
     "mypy>=1.17,<2",
     "playwright>=1.54,<2",
-    "pytest>=8.4,<9",
+    "pytest>=9.0.3,<10",
     "pytest-html>=4.1,<5",
     "pytest-playwright>=0.7,<1",
     "pytest-xdist>=3.8,<4",
@@ -37,7 +37,7 @@ demo_app = ["static/*"]
 test_framework = ["schemas/*.json"]
 
 [tool.pytest.ini_options]
-minversion = "8.4"
+minversion = "9.0.3"
 testpaths = ["tests"]
 addopts = [
     "--strict-config",
@@ -87,3 +87,9 @@ warn_unused_configs = true
 [[tool.mypy.overrides]]
 module = "jsonschema"
 ignore_missing_imports = true
+
+[dependency-groups]
+security = [
+    "bandit>=1.9.4,<2",
+    "pip-audit>=2.10.1,<3",
+]

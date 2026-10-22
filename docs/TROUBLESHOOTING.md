@@ -20,7 +20,7 @@ Moving or renaming a parent folder can leave absolute shebangs in installed cons
 scripts. Refresh all entry points from the existing lock without changing versions:
 
 ```bash
-uv sync --extra dev --locked --python 3.12 --reinstall
+uv sync --extra dev --locked --python 3.12.15 --reinstall
 uv lock --check
 ```
 

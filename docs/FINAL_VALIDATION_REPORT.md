@@ -94,7 +94,7 @@ docker compose down
 ```
 
 At the end of that run, the project containers and network were stopped. The named volume
-`sdet-playwright-framework_portfolio_database` was retained; `down -v` was not used.
+the database volume under the previous Compose project name was retained; `down -v` was not used.
 
 ## Primary test results
 
@@ -132,7 +132,7 @@ No primary command used `--allow-sqlite-ui-fallback`.
 
 Pull-request validation:
 
-- Run: [`30236883963`](https://github.com/wodud-khan/sdet-playwright-framework/actions/runs/30236883963)
+- Run: [`30236883963`](https://github.com/wodud-khan/playwright-automation-framework/actions/runs/30236883963)
 - Validated commit: `bab0f08a59c6423e08c80fa38635cf217d93d6c4`
 - `static-and-unit`: passed
 - `postgres-and-browser`: passed
@@ -140,7 +140,7 @@ Pull-request validation:
 
 Post-merge `main` validation:
 
-- Run: [`30237237422`](https://github.com/wodud-khan/sdet-playwright-framework/actions/runs/30237237422)
+- Run: [`30237237422`](https://github.com/wodud-khan/playwright-automation-framework/actions/runs/30237237422)
 - Merge commit: `0a2fbf927893ccacb56365214e8e5371c0434e39`
 - `static-and-unit`: passed
 - `postgres-and-browser`: passed

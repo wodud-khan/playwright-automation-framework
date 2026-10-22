@@ -1,8 +1,10 @@
-name: sdet-playwright-framework
+name: playwright-automation-framework
 
 services:
   database:
-    image: postgres:17.10-bookworm
+    build:
+      context: .
+      target: database
     environment:
       POSTGRES_DB: portfolio
       POSTGRES_USER: portfolio
@@ -14,9 +16,9 @@ services:
       timeout: 3s
       retries: 20
     volumes:
-      - portfolio_database:/var/lib/postgresql/data
+      - portfolio_database_alpine:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
 
   app:
     build:
@@ -29,7 +31,7 @@ services:
         condition: service_healthy
     init: true
     ports:
-      - "${APP_PORT:-8000}:8000"
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
     healthcheck:
       test:
         - CMD
@@ -43,4 +45,4 @@ services:
       retries: 20
 
 volumes:
-  portfolio_database:
+  portfolio_database_alpine:

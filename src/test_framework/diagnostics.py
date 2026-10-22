@@ -79,7 +79,8 @@ class BrowserEvidence:
             if len(events) != expected["count"]:
                 errors.append(f"expected HTTP {expected}, observed {len(events)}")
             count = expected["count"]
-            assert isinstance(count, int)
+            if not isinstance(count, int):
+                raise TypeError("Expected HTTP error count must be an integer")
             matched_indices.update(events[:count])
         errors += [
             f"HTTP error: {event}"
