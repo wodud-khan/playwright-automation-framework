@@ -26,7 +26,10 @@ form.addEventListener("submit", async (event) => {
     const body = await response.json();
 
     if (!response.ok) {
-      throw new Error(body.detail ?? `Request failed with status ${response.status}`);
+      const detail = Array.isArray(body.detail)
+        ? body.detail.map((issue) => `${issue.loc.at(-1)}: ${issue.msg}`).join("; ")
+        : body.detail;
+      throw new Error(detail ?? `Request failed with status ${response.status}`);
     }
 
     result.querySelector("[data-testid='order-id']").textContent = body.id;

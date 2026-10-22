@@ -22,5 +22,6 @@ def test_api_create_and_delete_are_reflected_in_postgresql(
     delete_response = api_client.delete(f"/orders/{created.id}")
 
     assert delete_response.status_code == 204
-    order_manager.mark_cleaned(created.id)
+    assert api_client.get(f"/orders/{created.id}").status_code == 404
     assert not postgres_client.order_exists(created.id)
+    order_manager.mark_cleaned(created.id)

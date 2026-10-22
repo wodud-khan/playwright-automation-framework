@@ -24,17 +24,31 @@ def test_create_and_read_order(order_manager: OrderManager, api_client: ApiClien
 
 
 @pytest.mark.api
-def test_create_order_rejects_invalid_quantity(
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("quantity", 0),
+        ("quantity", 101),
+        ("unit_price_cents", 0),
+        ("unit_price_cents", 1_000_001),
+        ("customer_name", "  "),
+        ("item_name", "x" * 81),
+        ("unexpected", "field"),
+    ],
+)
+def test_create_order_rejects_invalid_input(
     api_client: ApiClient,
     order_factory: OrderFactory,
+    field: str,
+    value: object,
 ) -> None:
     payload = order_factory.build().as_payload()
-    payload["quantity"] = 0
+    payload[field] = value
 
     response = api_client.post("/orders", payload)
 
     assert response.status_code == 422
-    assert response.json()["detail"][0]["loc"] == ["body", "quantity"]
+    assert response.json()["detail"][0]["loc"] == ["body", field]
 
 
 @pytest.mark.api

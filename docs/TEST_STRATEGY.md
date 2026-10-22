@@ -4,10 +4,10 @@
 |---|---|---|
 | Unit | Input rules, cleanup, diagnostics, SQLite behavior | Python |
 | API | Exact REST status and payload | App + PostgreSQL |
-| Contract | Public response against standalone JSON Schema | App + PostgreSQL |
+| Contract | Success and error responses against bundled JSON Schemas | App + PostgreSQL |
 | Database | Exact persisted row through psycopg | PostgreSQL |
 | Integration | API deletion reflected in SQL | App + PostgreSQL |
-| UI | Form controls and feedback, including mocked 503 recovery | App + browser |
+| UI | Controls, 422/503 feedback, keyboard order, and mobile layout | App + browser |
 | E2E | UI creation through API/SQL and exact-ID cleanup | App + PostgreSQL + Chromium |
 
 Run serial suites before the existing two-worker and three-browser smoke commands in the [README](../README.md). Do not treat the SQLite repository checks or focused SQLite UI run as PostgreSQL evidence. The controlled child E2E test intentionally fails after UI creation and then verifies exact-ID absence; the outer test passes only when cleanup succeeds.

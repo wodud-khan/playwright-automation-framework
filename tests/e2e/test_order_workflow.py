@@ -55,5 +55,6 @@ def test_ui_order_is_visible_through_api_and_postgresql(
 
     delete_response = api_client.delete(f"/orders/{order_id}")
     assert delete_response.status_code == 204
-    order_manager.mark_cleaned(order_id)
+    assert api_client.get(f"/orders/{order_id}").status_code == 404
     assert not postgres_client.order_exists(order_id)
+    order_manager.mark_cleaned(order_id)

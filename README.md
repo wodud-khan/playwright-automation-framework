@@ -1,68 +1,120 @@
 # SDET Playwright Framework
 
-This repository tests a small order form and REST API backed by PostgreSQL. The application is controlled by the project so browser, API, JSON contract, and database checks can observe the same order. Python 3.12, pytest, synchronous Playwright with pytest-playwright fixtures, Requests, uv, Ruff, and Mypy form the test toolchain.
+[![Quality validation](https://github.com/wodud-khan/sdet-playwright-framework/actions/workflows/quality.yml/badge.svg)](https://github.com/wodud-khan/sdet-playwright-framework/actions/workflows/quality.yml)
 
-## Why these test layers
+A Python test automation portfolio covering an order workflow from browser to API to
+PostgreSQL. A small FastAPI application is included so every layer runs against a
+controlled system, without depending on public demo sites.
 
-- Unit tests cover input rules, the SQLite repository path, cleanup, and diagnostics without a service.
-- API tests check exact REST statuses and bodies. Contract tests validate response JSON against `contracts/order.schema.json`, independently of Pydantic models.
-- Database tests query PostgreSQL directly; integration tests compare API and persisted state.
-- Focused UI tests check browser controls and feedback. Chromium E2E tests follow UI creation through API and PostgreSQL, then delete the exact owned order. A page smoke test runs on Chromium, Firefox, and WebKit; it is not full E2E coverage on three engines.
+**Stack:** Python 3.12 · pytest · Playwright · Requests · JSON Schema · psycopg ·
+PostgreSQL · Docker Compose · uv · Ruff · Mypy · GitHub Actions
 
-Each registered ID belongs to one test. Teardown attempts cleanup for every owned ID and verifies absence. A 404 during cleanup is acceptable only after an exact-ID read confirms absence. Product tests still require 204 for DELETE and 404 for missing records. The UI fixes unit price at 2499 cents; tests supply independent expected totals for different quantities.
+## Start here
 
-## Prerequisites and setup
+For a short code review, follow the [E2E workflow](tests/e2e/test_order_workflow.py),
+[page object](src/test_framework/pages/order_page.py), and
+[order cleanup manager](src/test_framework/order_manager.py). The
+[failure drill](tests/e2e/test_failure_cleanup.py) proves that a failed browser assertion
+still cleans up its order and produces diagnostic artifacts.
 
-Install [uv](https://docs.astral.sh/uv/), Docker with Compose, and the Playwright browsers. From the repository root:
+| Layer | What it demonstrates |
+|---|---|
+| Unit | Input rules, repository behavior, configuration, cleanup, diagnostics, readiness |
+| API | Create/read/delete behavior and invalid input boundaries |
+| Contract | Independent JSON schemas for successful and error responses |
+| Database | Exact persisted values read directly with psycopg |
+| Integration | API deletion verified through API and PostgreSQL |
+| UI | Required fields, error feedback, keyboard navigation, mobile layout |
+| E2E | UI creation, contract checks, API/SQL verification, and targeted cleanup |
+
+The full workflow runs on Chromium. A page smoke test runs on Chromium, Firefox, and
+WebKit. Focused keyboard and layout checks are not a complete accessibility audit.
+
+## Run locally
+
+Install [uv](https://docs.astral.sh/uv/) first. The unit suite needs neither Docker nor
+browser binaries:
 
 ```bash
+git clone https://github.com/wodud-khan/sdet-playwright-framework.git
+cd sdet-playwright-framework
 uv sync --extra dev --locked --python 3.12
+uv run --frozen pytest tests/unit -q
+```
+
+For all layers, start Docker with Compose support and run:
+
+```bash
 uv run --frozen playwright install chromium firefox webkit
-uv lock --check
-```
-
-Start the PostgreSQL stack and confirm readiness:
-
-```bash
-docker compose config
 docker compose up --detach --build --wait
-uv run --frozen python scripts/wait_for_services.py --timeout 30
-```
-
-If ports 8000 or 5432 are occupied, use `APP_PORT` and `POSTGRES_PORT` Compose overrides and set the matching URLs below. Do not stop unrelated processes.
-
-```bash
 export APP_BASE_URL=http://127.0.0.1:8000
 export DATABASE_URL=postgresql://portfolio:local-demo-password@127.0.0.1:5432/portfolio
-export ARTIFACTS_DIR=artifacts
-export TEST_RUN_ID=local-review
+uv run --frozen python scripts/wait_for_services.py --timeout 30
+uv run --frozen pytest -q --browser chromium
+```
 
-uv run --frozen pytest tests/unit -q
+On Linux, use `playwright install --with-deps chromium firefox webkit` to install browser
+system dependencies as well. View the demo at `http://127.0.0.1:8000` and its OpenAPI
+explorer at `/docs`.
+
+For narrower or parallel runs:
+
+```bash
 uv run --frozen pytest tests/api tests/contract tests/database tests/integration -q
-uv run --frozen pytest tests/ui tests/e2e -q --browser chromium
 uv run --frozen pytest -m 'api or contract or database or integration' -q -n 2
 uv run --frozen pytest tests/ui -q -n 2 --browser chromium
 uv run --frozen pytest -m smoke -q --browser chromium --browser firefox --browser webkit
 ```
 
-Static checks are `uv run --frozen ruff check .`, `uv run --frozen ruff format --check .`, and `uv run --frozen mypy src scripts`. Mypy checks `src` and `scripts`, not all tests. Stop only this project's stack with `docker compose down`; retain the named database volume.
+Stop the stack with `docker compose down`; the named database volume is retained.
+If ports 8000 or 5432 are occupied, set Compose's `APP_PORT`/`POSTGRES_PORT` and the
+matching `APP_BASE_URL`/`DATABASE_URL`. The readiness script follows `APP_BASE_URL`.
+See [troubleshooting](docs/TROUBLESHOOTING.md) for examples and the optional SQLite UI
+path. SQLite checks do not substitute for PostgreSQL integration tests.
 
-SQLite supports isolated repository tests and an explicit focused UI development path (`--allow-sqlite-ui-fallback`). It does not establish PostgreSQL integration or E2E correctness.
+## Engineering choices
 
-## Debugging failures
+- Function-scoped browser contexts and uniquely generated records keep tests isolated.
+- Cleanup addresses only registered order IDs, attempts every ID, and verifies absence.
+- Semantic locators, Playwright assertions, and response events replace fixed sleeps.
+- Standalone [JSON schemas](src/test_framework/schemas) stay independent of application
+  models and are bundled in installed packages.
+- Tests specify expected totals independently of the application's calculation.
+- No blanket retries: unexpected browser errors and failed cleanup remain visible failures.
+- Locked dependencies and SHA-pinned CI actions provide a repeatable baseline. Dependabot
+  proposes monthly updates for review; updates are not automatically merged.
 
-Use pytest's failure output, optional HTML/JUnit reports, and `--tracing retain-on-failure --screenshot only-on-failure --video retain-on-failure --output artifacts/playwright` for browser runs. Custom JSON records API method, URL, elapsed time, status or transport category, and browser error events. Its structured URL fields omit credentials, query strings, and fragments, but retain path segments; it does not record request or response bodies, headers, or cookies as separate fields. Console message text and page error names remain raw and can contain URLs or sensitive values. Native Playwright traces, screenshots, and videos, as well as pytest output and Compose logs, are not comprehensively redacted. Review evidence before sharing it and use synthetic test data.
+## Quality checks and debugging
 
-The installed pytest-playwright recorder retains native failure artifacts based on the call report. A failure arising only during teardown may have custom JSON without retained native trace, screenshot, or video. An unexpected API creation status still fails. If its response contains a canonical UUID, an exact API read must match both that ID and every uniquely generated payload field before the manager registers it for cleanup. A timeout, missing or malformed ID, or failed verification leaves no safe exact ID to clean automatically.
+```bash
+uv lock --check
+uv run --frozen ruff check .
+uv run --frozen ruff format --check .
+uv run --frozen mypy src scripts
+uv run --frozen pytest tests/ui tests/e2e --browser chromium \
+  --tracing retain-on-failure --screenshot only-on-failure --video retain-on-failure \
+  --output artifacts/playwright --junitxml=artifacts/browser-junit.xml \
+  --html=artifacts/browser-report.html --self-contained-html
+```
 
-## Validation record (September 2026)
+Mypy checks application/framework code and scripts. CI also runs unit and service tests,
+Chromium UI/E2E, bounded parallel checks, and three-engine smoke. It uploads reports and
+stops its Compose stack. It does not deploy the application.
 
-On September 23, before this correction pass, a locked sync and lock check passed; pytest collected 54 cases, Ruff lint/format and Mypy passed, and 40 unit cases passed. The PostgreSQL Compose app built and became healthy. Service tests passed serially (7) and with two workers (7). Chromium UI/E2E passed (7), focused UI passed with two workers (4), and three-engine smoke passed (3). Those results preceded the final code changes.
+Custom failure JSON includes API exchange metadata and browser error events. Native traces,
+screenshots, videos, and raw console text can contain sensitive data; use synthetic inputs
+and review artifacts before sharing. Teardown-only failures may lack native failure
+artifacts; use `--tracing on` for that reproduction. See the
+[diagnostic guide](docs/TROUBLESHOOTING.md) for cleanup and evidence limitations.
 
-For the current working tree, pytest collected 59 cases, the 25 focused unit cases and all 45 unit cases passed, and Ruff lint/format and Mypy passed. Four Chromium UI cases passed serially and with two workers against the explicit SQLite fallback. On September 25, the PostgreSQL Compose app built and became healthy; service tests passed serially (7) and with two workers (7), the repeatable failure cleanup regression passed (1), Chromium E2E passed (3), focused Chromium UI passed with two workers (4), and Chromium/Firefox/WebKit smoke passed (3). The project stack was stopped without deleting its named database volume. Remote CI results for later commits must be checked in GitHub Actions.
+## Further reading
 
-## CI and history
+- [Architecture](docs/ARCHITECTURE.md) and [test strategy](docs/TEST_STRATEGY.md)
+- [Design decisions and modernization review](docs/DESIGN_DECISIONS.md)
+- [Optional AI-assisted testing](docs/AI_ASSISTED_TESTING.md)
+- [CI guide](docs/CI_CD_GUIDE.md) and [flaky-test policy](docs/FLAKY_TEST_POLICY.md)
+- [Current validation](docs/VALIDATION.md) and [historical evidence](docs/FINAL_VALIDATION_REPORT.md)
 
-`.github/workflows/quality.yml` runs locked static/unit checks, the PostgreSQL service layers, bounded two-worker checks, Chromium UI/E2E, and three-engine smoke. It uploads reports and diagnostics and stops its Compose stack. CI validates quality; it does not deploy. Historical runs for the July 2026 version are linked in [the validation record](docs/FINAL_VALIDATION_REPORT.md); those results do not validate later edits.
-
-Additional details: [architecture](docs/ARCHITECTURE.md), [design decisions](docs/DESIGN_DECISIONS.md), [test strategy](docs/TEST_STRATEGY.md), [CI guide](docs/CI_CD_GUIDE.md), [flaky-test policy](docs/FLAKY_TEST_POLICY.md), and [troubleshooting](docs/TROUBLESHOOTING.md).
+This is a focused, team-adaptable framework, not a production application. Authentication,
+schema migrations, load testing, and comprehensive security/accessibility testing are
+outside its demonstrated scope.

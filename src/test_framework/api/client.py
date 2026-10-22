@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 from time import monotonic
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
@@ -41,8 +42,8 @@ class ApiClient:
     def __init__(self, base_url: str, timeout_seconds: float) -> None:
         if not base_url.startswith(("http://", "https://")):
             raise ValueError("API base URL must be absolute")
-        if timeout_seconds <= 0:
-            raise ValueError("API timeout must be greater than zero")
+        if not isfinite(timeout_seconds) or timeout_seconds <= 0:
+            raise ValueError("API timeout must be finite and greater than zero")
 
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds

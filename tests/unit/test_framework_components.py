@@ -10,7 +10,7 @@ import requests
 from jsonschema import ValidationError
 
 from test_framework.api.client import ApiClient
-from test_framework.contracts import load_order_schema, validate_contract
+from test_framework.contracts import load_order_schema, load_schema, validate_contract
 from test_framework.data_factory import OrderData, OrderFactory
 from test_framework.db.client import PostgresOrderClient
 from test_framework.order_manager import OrderManager
@@ -68,6 +68,20 @@ def test_clients_reject_invalid_runtime_configuration() -> None:
 
     with pytest.raises(ValueError, match="PostgreSQL"):
         PostgresOrderClient("sqlite:///orders.db")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("timeout", [0, -1, float("nan"), float("inf")])
+def test_api_client_rejects_unbounded_timeout(timeout: float) -> None:
+    with pytest.raises(ValueError, match="finite and greater than zero"):
+        ApiClient("http://localhost:8000/api", timeout)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("body", [{}, {"detail": []}, {"detail": [{}]}, {"detail": 42}])
+def test_error_contract_rejects_malformed_errors(body: object) -> None:
+    with pytest.raises(ValidationError):
+        validate_contract(body, load_schema("error.schema.json"))
 
 
 @pytest.mark.unit

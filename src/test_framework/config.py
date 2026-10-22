@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from math import isfinite
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -43,8 +44,8 @@ class Settings:
             "postgresql://portfolio:local-demo-password@127.0.0.1:5432/portfolio",
         )
         timeout = float(os.getenv("API_TIMEOUT_SECONDS", "5"))
-        if timeout <= 0:
-            raise ValueError("API_TIMEOUT_SECONDS must be greater than zero")
+        if not isfinite(timeout) or timeout <= 0:
+            raise ValueError("API_TIMEOUT_SECONDS must be finite and greater than zero")
 
         artifacts_dir = Path(os.getenv("ARTIFACTS_DIR", "artifacts"))
         test_run_id = os.getenv("TEST_RUN_ID", "local")

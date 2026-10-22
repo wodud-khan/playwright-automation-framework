@@ -31,6 +31,8 @@ def test_settings_use_safe_local_defaults(monkeypatch: pytest.MonkeyPatch) -> No
     [
         ("APP_BASE_URL", "localhost:8000", "absolute HTTP"),
         ("API_TIMEOUT_SECONDS", "0", "greater than zero"),
+        ("API_TIMEOUT_SECONDS", "nan", "finite"),
+        ("API_TIMEOUT_SECONDS", "inf", "finite"),
         ("TEST_RUN_ID", " ", "must not be empty"),
     ],
 )

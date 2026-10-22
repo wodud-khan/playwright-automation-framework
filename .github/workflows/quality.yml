@@ -116,6 +116,14 @@ jobs:
       - name: Confirm application readiness
         run: uv run --frozen python scripts/wait_for_services.py --timeout 30
 
+      - name: Check contracts in the installed package
+        run: >-
+          docker compose exec -T -w /tmp app python -c
+          'from test_framework.contracts import load_schema;
+          from jsonschema import Draft202012Validator;
+          [Draft202012Validator.check_schema(load_schema(name))
+          for name in ("order.schema.json", "error.schema.json")]'
+
       - name: Run service-layer tests serially
         run: >-
           uv run --frozen pytest
@@ -152,6 +160,13 @@ jobs:
           --screenshot only-on-failure
           --output artifacts/playwright/smoke
           --junitxml=artifacts/browser-smoke-junit.xml
+
+      - name: Prove bounded browser-test parallelism
+        run: >-
+          uv run --frozen pytest tests/ui -q -n 2 --browser chromium
+          --tracing retain-on-failure --screenshot only-on-failure
+          --output artifacts/playwright/parallel
+          --junitxml=artifacts/browser-parallel-junit.xml
 
       - name: Capture Compose diagnostics
         if: always()

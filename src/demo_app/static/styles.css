@@ -5,6 +5,10 @@
   color: #17211b;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -14,7 +18,7 @@ body {
 
 main {
   width: min(42rem, calc(100% - 3rem));
-  padding: 3rem;
+  padding: clamp(1rem, 5vw, 3rem);
   background: #fffdf8;
   border: 1px solid #d7d0c1;
   border-radius: 1rem;

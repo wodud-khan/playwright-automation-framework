@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from importlib.resources import files
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-ORDER_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "contracts" / "order.schema.json"
+SCHEMAS = files("test_framework").joinpath("schemas")
 
 
 def load_order_schema() -> dict[str, object]:
-    schema: dict[str, object] = json.loads(ORDER_SCHEMA_PATH.read_text(encoding="utf-8"))
+    return load_schema("order.schema.json")
+
+
+def load_schema(name: str) -> dict[str, object]:
+    """Read a bundled contract from either a checkout or an installed package."""
+    schema: dict[str, object] = json.loads(SCHEMAS.joinpath(name).read_text(encoding="utf-8"))
     return schema
 
 

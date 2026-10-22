@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sdet-playwright-framework"
 version = "0.2.0"
-description = "A small, evidence-based quality engineering portfolio."
+description = "Python quality engineering framework for UI, API, contract, and PostgreSQL testing."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
@@ -34,6 +34,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 demo_app = ["static/*"]
+test_framework = ["schemas/*.json"]
 
 [tool.pytest.ini_options]
 minversion = "8.4"
