@@ -136,6 +136,22 @@ def test_order_manager_cleans_up_only_its_exact_order() -> None:
 
 
 @pytest.mark.unit
+def test_order_manager_uses_explicit_payload_without_building_another() -> None:
+    payload = OrderData("Synthetic Customer", "Test Journal", 100, 1_000_000)
+    api = Mock()
+    api.post.return_value = _response(201, '{"id":"c56a4180-65aa-42ec-a945-5fd21dec0538"}')
+    factory = Mock()
+    manager = OrderManager(api, factory)
+
+    created = manager.create(payload)
+
+    api.post.assert_called_once_with("/orders", payload.as_payload())
+    factory.build.assert_not_called()
+    assert created.payload == payload
+    assert list(manager._owned_order_ids) == [created.id]
+
+
+@pytest.mark.unit
 def test_unexpected_create_status_registers_only_api_verified_order() -> None:
     order_id = "c56a4180-65aa-42ec-a945-5fd21dec0538"
     payload = OrderData("Test unique-owner", "Quality Notebook unique-owner", 2, 2499)

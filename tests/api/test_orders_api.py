@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from test_framework.api.client import ApiClient
@@ -21,6 +23,51 @@ def test_create_and_read_order(order_manager: OrderManager, api_client: ApiClien
 
     assert response.status_code == 200
     assert response.json() == created.response_body
+
+
+@pytest.mark.api
+@pytest.mark.parametrize(
+    ("quantity", "unit_price_cents", "expected_total_cents"),
+    [(1, 1, 1), (100, 1, 100), (1, 1_000_000, 1_000_000), (100, 1_000_000, 100_000_000)],
+)
+def test_create_order_accepts_numeric_boundaries(
+    api_client: ApiClient,
+    order_factory: OrderFactory,
+    order_manager: OrderManager,
+    quantity: int,
+    unit_price_cents: int,
+    expected_total_cents: int,
+) -> None:
+    payload = replace(order_factory.build(), quantity=quantity, unit_price_cents=unit_price_cents)
+    created = order_manager.create(payload)
+    body = created.response_body
+
+    assert body["customer_name"] == payload.customer_name
+    assert body["item_name"] == payload.item_name
+    assert body["quantity"] == quantity
+    assert body["unit_price_cents"] == unit_price_cents
+    assert body["total_cents"] == expected_total_cents
+
+    read_response = api_client.get(f"/orders/{body['id']}")
+    assert read_response.status_code == 200
+    assert read_response.json() == body
+
+
+@pytest.mark.api
+@pytest.mark.parametrize("field", ["customer_name", "item_name", "quantity", "unit_price_cents"])
+def test_create_order_rejects_missing_required_field(
+    api_client: ApiClient,
+    order_factory: OrderFactory,
+    field: str,
+) -> None:
+    payload = order_factory.build().as_payload()
+    del payload[field]
+
+    response = api_client.post("/orders", payload)
+
+    assert response.status_code == 422
+    errors = response.json()["detail"]
+    assert [(error["loc"], error["type"]) for error in errors] == [(["body", field], "missing")]
 
 
 @pytest.mark.api

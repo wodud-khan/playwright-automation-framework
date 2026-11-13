@@ -19,8 +19,9 @@ WORKDIR /app
 
 COPY --from=uv-bin /uv /uvx /bin/
 
-# uv installs the application; the base image's pip is not needed at runtime.
-RUN /usr/local/bin/python -m pip uninstall --yes pip
+# Patch inherited OS packages and remove the unused runtime installer.
+RUN apk upgrade --no-cache \
+    && /usr/local/bin/python -m pip uninstall --yes pip
 
 RUN addgroup -g 10001 portfolio \
     && adduser -D -u 10001 -G portfolio portfolio \
