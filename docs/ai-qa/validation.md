@@ -265,3 +265,46 @@ git diff --cached --no-ext-diff --unified=0 | /private/tmp/ai-qa-scanners/gitlea
   --redact=100 --report-format json \
   --report-path artifacts/ai-qa-20261113/gitleaks-staged.json
 ```
+
+## Hosted-validation addendum — 2026-11-13
+
+PR: [#11](https://github.com/wodud-khan/playwright-automation-framework/pull/11).
+Workflow correction: `e3002e838942501ca1339ab998ed8e0bcd9d62df`.
+[Hosted run 43551512816](https://github.com/wodud-khan/playwright-automation-framework/actions/runs/43551512816)
+completed successfully for that commit.
+
+The original [run 43545850201](https://github.com/wodud-khan/playwright-automation-framework/actions/runs/43545850201)
+failed before service/browser testing because Trivy could not export a bare image ID
+returned by `docker compose images -q`. Docker rejected it as an invalid repository
+name; the scanner did not produce a vulnerability assessment in that failed step.
+
+The narrow workflow correction scans the actual built tags
+`playwright-automation-framework-app:latest` and
+`playwright-automation-framework-database:latest`, with `docker image inspect` before
+each scan. Trivy 0.76.1, its archive checksum verification, `HIGH,CRITICAL`, and
+`--exit-code 1` are unchanged. No scanner error or vulnerability finding is suppressed.
+
+Local verification passed: workflow/Compose YAML parsing, Bash syntax, exact diff and
+whitespace review, Compose tag resolution, both image existence checks, and the
+extracted audit loop against both local images. Both scans passed the selected severity
+gate. `uv lock --check`, Ruff lint/format, Mypy, and 72 unit tests also passed.
+
+| Hosted check | Actual result |
+|---|---|
+| Secret/dependency audit: Gitleaks, Bandit, pip-audit | Passed |
+| Static checks and collection | Passed; 104 cases collected |
+| Two-worker unit suite | 72 passed |
+| App and database image audit | Passed; no HIGH/CRITICAL findings reported |
+| Readiness and installed-package contracts | Passed |
+| Serial API/contract/PostgreSQL/integration suite | 23 passed |
+| Two-worker service suite | 23 passed |
+| Chromium UI/E2E suite | 9 passed |
+| Chromium/Firefox/WebKit smoke | 3 passed, 115 deselected |
+| Two-worker Chromium UI suite | 6 passed |
+| Compose diagnostics, shutdown, and artifact uploads | Passed |
+
+All three hosted jobs succeeded; no downstream test step was skipped and no new
+failure occurred. These are hosted Linux results, distinct from the earlier local
+ARM64 evidence. The addendum preserves the original results and their historical
+context. Coverage/policy limitations documented above remain. PR #11 stays open for
+final owner review; no merge or change to `main` is authorized.
