@@ -112,6 +112,22 @@ and review artifacts before sharing. Teardown-only failures may lack native fail
 artifacts; use `--tracing on` for that reproduction. See the
 [diagnostic guide](docs/TROUBLESHOOTING.md) for cleanup and evidence limitations.
 
+## AI-Assisted QA: From Requirements to Verified Tests
+
+This portfolio exercise uses AI to assist specification analysis, risk-based test
+design, generated-code review, and debugging. The owner approved an implementation-derived
+Order Lab baseline; final generated code is subject to personal review. Committed
+regression tests run without AI API keys or an agent runtime.
+
+- [Repository instructions](AGENTS.md) and [five reusable prompts](prompts/)
+- [Approved requirements](docs/ai-qa/order-requirements.md), [decision table](docs/ai-qa/decision-table.md),
+  and [requirements-to-test traceability](docs/ai-qa/traceability.md)
+- Actual [API tests](tests/api/test_orders_api.py) and [schema unit tests](tests/unit/test_schemas.py)
+- [AI review log](docs/ai-qa/ai-review-log.md), [validation evidence](docs/ai-qa/validation.md),
+  [completion report](docs/ai-qa/completion-report.md), and [human review workflow](docs/AI_ASSISTED_TESTING.md)
+- [Future AI Quality Engineering roadmap](docs/AI_QUALITY_ENGINEERING_ROADMAP.md);
+  evaluation harnesses, tool-calling agents, and RAG are planned, not implemented
+
 ## Further reading
 
 - [Architecture](docs/ARCHITECTURE.md) and [test strategy](docs/TEST_STRATEGY.md)

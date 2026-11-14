@@ -166,9 +166,12 @@ jobs:
             --output "$RUNNER_TEMP/trivy.tar.gz"
           echo "${TRIVY_SHA256}  $RUNNER_TEMP/trivy.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/trivy.tar.gz" -C "$RUNNER_TEMP" trivy
-          for service in app database; do
+          for image in \
+            playwright-automation-framework-app:latest \
+            playwright-automation-framework-database:latest; do
+            docker image inspect "$image" > /dev/null
             "$RUNNER_TEMP/trivy" image --scanners vuln --severity HIGH,CRITICAL \
-              --exit-code 1 "$(docker compose images -q "$service")"
+              --exit-code 1 "$image"
           done
 
       - name: Confirm application readiness

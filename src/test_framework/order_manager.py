@@ -32,8 +32,9 @@ class OrderManager:
         self.order_factory = order_factory
         self._owned_order_ids: dict[str, None] = {}
 
-    def create(self) -> CreatedOrder:
-        payload = self.order_factory.build()
+    def create(self, payload: OrderData | None = None) -> CreatedOrder:
+        if payload is None:
+            payload = self.order_factory.build()
         response = self.api_client.post("/orders", payload.as_payload())
         if response.status_code != 201:
             self._register_confirmed_creation(payload, response)
